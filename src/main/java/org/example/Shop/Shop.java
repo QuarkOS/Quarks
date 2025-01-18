@@ -1,5 +1,7 @@
 package org.example.Shop;
 
+import org.example.JSONManager;
+
 import java.util.List;
 
 public class Shop {
@@ -54,5 +56,10 @@ public class Shop {
 
     public Cart getCart() {
         return cart;
+    }
+
+    public void saveAsJSON() {
+        // Save shop data as JSON
+        JSONManager.saveShopData(this.shopInventory);
     }
 }

@@ -4,6 +4,7 @@ import io.github.freya022.botcommands.api.commands.annotations.Command;
 import io.github.freya022.botcommands.api.commands.application.ApplicationCommand;
 import io.github.freya022.botcommands.api.commands.application.slash.GuildSlashEvent;
 import io.github.freya022.botcommands.api.commands.application.slash.annotations.JDASlashCommand;
+import io.github.freya022.botcommands.api.commands.application.slash.annotations.SlashOption;
 import io.github.freya022.botcommands.api.commands.application.slash.annotations.TopLevelSlashCommandData;
 import org.example.Shop.*;
 
@@ -25,7 +26,7 @@ public class ShopCommand extends ApplicationCommand {
     }
 
     @TopLevelSlashCommandData
-    @JDASlashCommand(name = "shop", description = "Shop related commands")
+    @JDASlashCommand(name = "shop", subcommand = "help", description = "Shop related commands")
     public void onShopCommand(GuildSlashEvent event) {
         event.deferReply(true).queue();
         event.getHook().editOriginal("Shop related commands:\n" +
@@ -47,7 +48,7 @@ public class ShopCommand extends ApplicationCommand {
     }
 
     @JDASlashCommand(name = "shop", subcommand = "additem", description = "Add an item to the cart")
-    public void onAddItem(GuildSlashEvent event, String itemName) {
+    public void onAddItem(GuildSlashEvent event, @SlashOption String itemName) {
         event.deferReply(true).queue();
         Item item = shop.getShopInventory().stream()
                 .filter(i -> i.getName().equalsIgnoreCase(itemName))
@@ -88,5 +89,12 @@ public class ShopCommand extends ApplicationCommand {
         event.deferReply(true).queue();
         shop.cancelCheckout();
         event.getHook().editOriginal("Checkout canceled. The cart has been emptied.").queue();
+    }
+
+    @JDASlashCommand(name = "shop", subcommand = "save", description = "Save shop data")
+    public void onSaveShopData(GuildSlashEvent event) {
+        event.deferReply(true).queue();
+        shop.saveAsJSON();
+        event.getHook().editOriginal("Shop data saved successfully.").queue();
     }
 }
