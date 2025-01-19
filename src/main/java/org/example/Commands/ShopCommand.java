@@ -11,7 +11,9 @@ import org.example.Commands.AutoCompleters.ProductAutoComplete;
 import org.example.Shop.*;
 
 import java.awt.Color;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @Command
 public class ShopCommand extends ApplicationCommand {
@@ -32,12 +34,12 @@ public class ShopCommand extends ApplicationCommand {
         embed.setDescription("**Explore the available shop commands below:**\n\n");
 
         // Add fields with more refined formatting and emojis
-        embed.addField("**/shop viewitems**", "View available items in the shop.", false);
-        embed.addField("**/shop additem [item name]**", "Add an item to the cart.", false);
-        embed.addField("**/shop viewcart**", "View items in the cart.", false);
-        embed.addField("**/shop checkout**", "Confirm the checkout.", false);
-        embed.addField("**/shop cancel**", "Cancel the checkout.", false);
-        embed.addField("**/shop save**", "Save shop data.", false);
+        embed.addField("**/shop list-items**", "View available items in the shop.", false);
+        embed.addField("**/shop add-to-cart [item name]**", "Add an item to the cart.", false);
+        embed.addField("**/shop show-cart**", "View items in the cart.", false);
+        embed.addField("**/shop confirm-purchase**", "Confirm the checkout.", false);
+        embed.addField("**/shop cancel-order**", "Cancel the checkout.", false);
+        embed.addField("**/shop save-shop-data**", "Save shop data.", false);
 
         // Customize colors for a more dynamic look
         embed.setColor(new Color(0x00BFFF)); // Use a refreshing blue color
@@ -48,72 +50,101 @@ public class ShopCommand extends ApplicationCommand {
         event.replyEmbeds(embed.build()).queue();
     }
 
-
-
-    @JDASlashCommand(name = "shop", subcommand = "viewitems", description = "View available items in the shop")
+    @JDASlashCommand(name = "shop", subcommand = "list-items", description = "View available items in the shop")
     public void onViewItems(GuildSlashEvent event) {
         EmbedBuilder embed = new EmbedBuilder();
-        embed.setTitle("Shop Items");
+        embed.setTitle("\uD83D\uDCC8 **Shop Items** \uD83D\uDCC8");
+        embed.setDescription("Explore the array of items available in our shop:");
         embed.setColor(Color.BLUE);
         for (Item item : shop.getShopInventory()) {
-            embed.addField(item.getName(), "Price: $" + item.getPrice() + "\nStock: " + item.getQuantity(), false);
+            embed.addField(item.getName(), "**Price**: $" + item.getPrice() + "\n**Stock**: " + item.getQuantity(), false);
         }
+        embed.setFooter("Happy shopping! 🛒");
         event.replyEmbeds(embed.build()).queue();
     }
 
-    @JDASlashCommand(name = "shop", subcommand = "additem", description = "Add an item to the cart")
-    public void onAddItem(GuildSlashEvent event, @SlashOption (name = "product", description = "Product", autocomplete = ProductAutoComplete.PRODUCT_AUTOCOMPLETE_NAME) String itemName) {
-        boolean success = shop.addItem(itemName);
+    @JDASlashCommand(name = "shop", subcommand = "add-to-cart", description = "Add an item to the cart")
+    public void onAddItem(GuildSlashEvent event, @SlashOption(name = "product", description = "Product", autocomplete = ProductAutoComplete.PRODUCT_AUTOCOMPLETE_NAME) String itemName, @SlashOption (name = "quantity") int quantity) {
+        boolean success = shop.addItem(itemName, quantity);
         EmbedBuilder embed = new EmbedBuilder();
-        embed.setTitle("Add Item to Cart");
+        embed.setTitle("\uD83D\uDED2 **Add Item to Cart** \uD83D\uDED2");
         if (success) {
-            embed.setDescription(itemName + " has been added to your cart.");
+            embed.setDescription("**" + itemName + " " + quantity + "x ** has been added to your cart. 🛒");
             embed.setColor(Color.GREEN);
         } else {
-            embed.setDescription("Item not found or out of stock: " + itemName);
+            embed.setDescription("Item not found or out of stock: **" + itemName + "**");
             embed.setColor(Color.RED);
         }
+        embed.setFooter("Check your cart with /shop show-cart");
         event.replyEmbeds(embed.build()).queue();
     }
 
-    @JDASlashCommand(name = "shop", subcommand = "viewcart", description = "View items in the cart")
+    @JDASlashCommand(name = "shop", subcommand = "show-cart", description = "View items in the cart")
     public void onViewCart(GuildSlashEvent event) {
         EmbedBuilder embed = new EmbedBuilder();
-        embed.setTitle("Cart Items");
+        embed.setTitle("\uD83D\uDCE6 **Cart Items** \uD83D\uDCE6");
+        embed.setDescription("Here's what's in your cart:");
         embed.setColor(Color.ORANGE);
-        for (Item item : shop.getCart().getItems()) {
-            embed.addField(item.getName(), "Price: $" + item.getPrice() + "\nQuantity: " + item.getQuantity(), false);
+
+        if (shop.getCart().isEmpty()) {
+            embed.setDescription("Your cart is currently empty. Add items using `/shop add-to-cart`.");
+        } else {
+            Map<String, Integer> itemQuantities = new HashMap<>();
+            Map<String, Double> itemPrices = new HashMap<>();
+            double total = 0.0;
+
+            // Aggregate quantities and prices
+            for (Item item : shop.getCart().getItems()) {
+                itemQuantities.put(item.getName(), itemQuantities.getOrDefault(item.getName(), 0) + 1);
+                itemPrices.put(item.getName(), item.getPrice());
+            }
+
+            // Display aggregated items and calculate total
+            for (Map.Entry<String, Integer> entry : itemQuantities.entrySet()) {
+                String itemName = entry.getKey();
+                int quantity = entry.getValue();
+                double price = itemPrices.get(itemName);
+                embed.addField(itemName, "**Price**: $" + price + "\n**Quantity**: " + quantity, false);
+                total += price * quantity;
+            }
+
+            embed.addField("**Total**", "$" + String.format("%.2f", total), false);
+            embed.setFooter("Ready to checkout? Use `/shop confirm-purchase`");
         }
+
         event.replyEmbeds(embed.build()).queue();
     }
 
-    @JDASlashCommand(name = "shop", subcommand = "checkout", description = "Confirm the checkout")
+    @JDASlashCommand(name = "shop", subcommand = "confirm-purchase", description = "Confirm the checkout")
     public void onCheckout(GuildSlashEvent event) {
         double total = shop.confirmCheckout();
         EmbedBuilder embed = new EmbedBuilder();
-        embed.setTitle("Checkout");
-        embed.setDescription("Your total is $" + total + ". Thank you for shopping with us!");
+        embed.setTitle("\uD83D\uDCB0 **Checkout** \uD83D\uDCB0");
+        embed.setDescription("Your total is **$" + total + "**. Thank you for shopping with us!");
         embed.setColor(Color.GREEN);
+        embed.setFooter("We hope to see you again!");
         event.replyEmbeds(embed.build()).queue();
     }
 
-    @JDASlashCommand(name = "shop", subcommand = "cancel", description = "Cancel the checkout")
+    @JDASlashCommand(name = "shop", subcommand = "cancel-order", description = "Cancel the checkout")
     public void onCancelCheckout(GuildSlashEvent event) {
         shop.cancelCheckout();
         EmbedBuilder embed = new EmbedBuilder();
-        embed.setTitle("Cancel Checkout");
+        embed.setTitle("\u274C **Cancel Checkout** \u274C");
         embed.setDescription("Your checkout has been canceled.");
         embed.setColor(Color.RED);
+        embed.setFooter("Need help? Use /shop help");
         event.replyEmbeds(embed.build()).queue();
     }
 
-    @JDASlashCommand(name = "shop", subcommand = "save", description = "Save shop data")
+    @JDASlashCommand(name = "shop", subcommand = "save-shop-data", description = "Save shop data")
     public void onSaveShopData(GuildSlashEvent event) {
         shop.saveAsJSON();
         EmbedBuilder embed = new EmbedBuilder();
-        embed.setTitle("Save Shop Data");
+        embed.setTitle("\uD83D\uDCD1 **Save Shop Data** \uD83D\uDCD1");
         embed.setDescription("Shop data has been saved.");
         embed.setColor(Color.GREEN);
+        embed.setFooter("All set! Use /shop help for more commands.");
         event.replyEmbeds(embed.build()).queue();
     }
 }

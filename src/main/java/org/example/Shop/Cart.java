@@ -10,8 +10,10 @@ public class Cart {
         this.items = new ArrayList<>();
     }
 
-    public void addItem(Item item) {
-        items.add(item);
+    public void addItem(Item item, int quantity) {
+        for (int i = 0; i < quantity; i++) {
+            items.add(item);
+        }
     }
 
     public void removeItem(Item item) {
@@ -36,7 +38,7 @@ public class Cart {
     public double calculateTotal() {
         double total = 0.0;
         for (Item item : items) {
-            total += item.getPrice() * item.getQuantity();
+            total += item.getPrice();
         }
         return total;
     }

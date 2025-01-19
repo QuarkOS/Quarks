@@ -37,13 +37,10 @@ public class Shop {
         System.out.println("Checkout canceled. The cart has been emptied.");
     }
 
-    public boolean addItem(String item) {
-        cart.addItem(getItemByString(item));
-        System.out.println(item + " has been added to the cart.");
-        if (getItemByString(item) == null) {
-            return false;
-        }
-        return true;
+    public boolean addItem(String item, int quantity) {
+        cart.addItem(getItemByString(item), quantity);
+        System.out.println(item + " " + quantity + "x has been added to the cart.");
+        return getItemByString(item) != null;
     }
 
     private Item getItemByString(String input) {
