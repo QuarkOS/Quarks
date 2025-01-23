@@ -56,9 +56,34 @@ public class ShopCommand extends ApplicationCommand {
         embed.setTitle("\uD83D\uDCC8 **Shop Items** \uD83D\uDCC8");
         embed.setDescription("Explore the array of items available in our shop:");
         embed.setColor(Color.BLUE);
+
+        // Categorize items
+        StringBuilder energyDrinks = new StringBuilder();
+        StringBuilder snacks = new StringBuilder();
+
         for (Item item : shop.getShopInventory()) {
-            embed.addField(item.getName(), "**Price**: $" + item.getPrice() + "\n**Stock**: " + item.getQuantity(), false);
+            switch (item.getCategory()) { // Assuming you have a category field in your Item class
+                case ItemCategory.DRINKS:
+                    energyDrinks.append("**").append(item.getName()).append("**\n")
+                            .append("Price: $").append(item.getPrice()).append("\n")
+                            .append("Stock: ").append(item.getQuantity()).append("\n\n");
+                    break;
+                case ItemCategory.SNACKS:
+                    snacks.append("**").append(item.getName()).append("**\n")
+                            .append("Price: $").append(item.getPrice()).append("\n")
+                            .append("Stock: ").append(item.getQuantity()).append("\n\n");
+                    break;
+            }
         }
+
+        if (energyDrinks.length() > 0) {
+            embed.addField("**Energy Drinks:**", energyDrinks.toString(), false);
+        }
+
+        if (snacks.length() > 0) {
+            embed.addField("**Snacks:**", snacks.toString(), false);
+        }
+
         embed.setFooter("Happy shopping! 🛒");
         event.replyEmbeds(embed.build()).queue();
     }
@@ -117,13 +142,30 @@ public class ShopCommand extends ApplicationCommand {
 
     @JDASlashCommand(name = "shop", subcommand = "confirm-purchase", description = "Confirm the checkout")
     public void onCheckout(GuildSlashEvent event) {
-        double total = shop.confirmCheckout();
-        EmbedBuilder embed = new EmbedBuilder();
-        embed.setTitle("\uD83D\uDCB0 **Checkout** \uD83D\uDCB0");
-        embed.setDescription("Your total is **$" + total + "**. Thank you for shopping with us!");
-        embed.setColor(Color.GREEN);
-        embed.setFooter("We hope to see you again!");
-        event.replyEmbeds(embed.build()).queue();
+        double total = shop.confirmCheckout(event.getGuild().getTextChannelById("1298223556655714374"));
+
+        if (total == -1.0) { // One or More Items not available
+            EmbedBuilder embedUnavailable = new EmbedBuilder();
+            embedUnavailable.setTitle("🚫 **Checkout Error** 🚫");
+            embedUnavailable.setDescription("One or more items in your cart are currently unavailable. Please review your cart and try again.");
+            embedUnavailable.setColor(Color.RED);
+            embedUnavailable.setFooter("We apologize for the inconvenience.");
+            event.replyEmbeds(embedUnavailable.build()).queue();
+        } else if (total == -2.0) { // Empty Cart
+            EmbedBuilder embedEmptyCart = new EmbedBuilder();
+            embedEmptyCart.setTitle("🛒 **Empty Cart** 🛒");
+            embedEmptyCart.setDescription("Your cart is empty. Please add items to your cart before checking out.");
+            embedEmptyCart.setColor(Color.ORANGE);
+            embedEmptyCart.setFooter("Happy shopping!");
+            event.replyEmbeds(embedEmptyCart.build()).queue();
+        } else { // Normal Checkout
+            EmbedBuilder embed = new EmbedBuilder();
+            embed.setTitle("\uD83D\uDCB0 **Checkout** \uD83D\uDCB0");
+            embed.setDescription(String.format("Your total is: **$%.2f**. Thank you for shopping with us!", total));
+            embed.setColor(Color.GREEN);
+            embed.setFooter("We hope to see you again!");
+            event.replyEmbeds(embed.build()).queue();
+        }
     }
 
     @JDASlashCommand(name = "shop", subcommand = "cancel-order", description = "Cancel the checkout")
