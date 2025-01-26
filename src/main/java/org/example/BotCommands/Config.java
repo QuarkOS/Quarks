@@ -3,6 +3,7 @@ package org.example.BotCommands;
 import io.github.cdimascio.dotenv.Dotenv;
 import io.github.freya022.botcommands.api.core.service.annotations.BService;
 
+import javax.sql.RowSet;
 import java.util.List;
 
 public class Config {
@@ -21,5 +22,9 @@ public class Config {
         }
 
         return INSTANCE;
+    }
+
+    public RowSet getDatabaseConfig() {
+        return null;
     }
 }

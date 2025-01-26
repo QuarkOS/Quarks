@@ -6,9 +6,17 @@ import io.github.freya022.botcommands.api.commands.application.slash.GuildSlashE
 import io.github.freya022.botcommands.api.commands.application.slash.annotations.JDASlashCommand;
 import io.github.freya022.botcommands.api.commands.application.slash.annotations.SlashOption;
 import io.github.freya022.botcommands.api.commands.application.slash.annotations.TopLevelSlashCommandData;
+import io.github.freya022.botcommands.api.components.Button;
+import io.github.freya022.botcommands.api.components.Buttons;
+import io.github.freya022.botcommands.api.components.annotations.ComponentData;
+import io.github.freya022.botcommands.api.components.annotations.JDAButtonListener;
+import io.github.freya022.botcommands.api.components.event.ButtonEvent;
 import net.dv8tion.jda.api.EmbedBuilder;
+import net.dv8tion.jda.api.entities.emoji.Emoji;
 import org.example.Commands.AutoCompleters.ProductAutoComplete;
-import org.example.Shop.*;
+import org.example.Shop.Item;
+import org.example.Shop.ItemCategory;
+import org.example.Shop.Shop;
 
 import java.awt.Color;
 import java.util.HashMap;
@@ -19,9 +27,14 @@ import java.util.Map;
 public class ShopCommand extends ApplicationCommand {
 
     private final Shop shop;
+    private final Buttons buttons;
+    private static final String SHOW_ALL = "SHOW_ALL";
+    private static final String SHOW_DRINKS = "SHOW_DRINKS";
+    private static final String SHOW_SNACKS = "SHOW_SNACKS";
 
-    public ShopCommand(Shop shop) {
+    public ShopCommand(Shop shop, Buttons buttons) {
         this.shop = shop;
+        this.buttons = buttons;
     }
 
     @TopLevelSlashCommandData
@@ -50,46 +63,46 @@ public class ShopCommand extends ApplicationCommand {
         event.replyEmbeds(embed.build()).queue();
     }
 
-    @JDASlashCommand(name = "shop", subcommand = "list-items", description = "View available items in the shop")
-    public void onViewItems(GuildSlashEvent event) {
-        EmbedBuilder embed = new EmbedBuilder();
-        embed.setTitle("\uD83D\uDCC8 **Shop Items** \uD83D\uDCC8");
-        embed.setDescription("Explore the array of items available in our shop:");
-        embed.setColor(Color.BLUE);
-
-        // Categorize items
-        StringBuilder energyDrinks = new StringBuilder();
-        StringBuilder snacks = new StringBuilder();
-
-        for (Item item : shop.getShopInventory()) {
-            switch (item.getCategory()) { // Assuming you have a category field in your Item class
-                case ItemCategory.DRINKS:
-                    energyDrinks.append("**").append(item.getName()).append("**\n")
-                            .append("Price: $").append(item.getPrice()).append("\n")
-                            .append("Stock: ").append(item.getQuantity()).append("\n\n");
-                    break;
-                case ItemCategory.SNACKS:
-                    snacks.append("**").append(item.getName()).append("**\n")
-                            .append("Price: $").append(item.getPrice()).append("\n")
-                            .append("Stock: ").append(item.getQuantity()).append("\n\n");
-                    break;
-            }
-        }
-
-        if (energyDrinks.length() > 0) {
-            embed.addField("**Energy Drinks:**", energyDrinks.toString(), false);
-        }
-
-        if (snacks.length() > 0) {
-            embed.addField("**Snacks:**", snacks.toString(), false);
-        }
-
-        embed.setFooter("Happy shopping! 🛒");
-        event.replyEmbeds(embed.build()).queue();
-    }
+//    @JDASlashCommand(name = "shop", subcommand = "list-items", description = "View available items in the shop")
+//    public void onViewItems(GuildSlashEvent event) {
+//        EmbedBuilder embed = new EmbedBuilder();
+//        embed.setTitle("\uD83D\uDCC8 **Shop Items** \uD83D\uDCC8");
+//        embed.setDescription("Explore the array of items available in our shop:");
+//        embed.setColor(Color.BLUE);
+//
+//        // Categorize items
+//        StringBuilder energyDrinks = new StringBuilder();
+//        StringBuilder snacks = new StringBuilder();
+//
+//        for (Item item : shop.getShopInventory()) {
+//            switch (item.getCategory()) {
+//                case ItemCategory.DRINKS:
+//                    energyDrinks.append("**").append(item.getName()).append("**\n")
+//                            .append("Price: $").append(item.getPrice()).append("\n")
+//                            .append("Stock: ").append(item.getQuantity()).append("\n\n");
+//                    break;
+//                case ItemCategory.SNACKS:
+//                    snacks.append("**").append(item.getName()).append("**\n")
+//                            .append("Price: $").append(item.getPrice()).append("\n")
+//                            .append("Stock: ").append(item.getQuantity()).append("\n\n");
+//                    break;
+//            }
+//        }
+//
+//        if (energyDrinks.length() > 0) {
+//            embed.addField("**Energy Drinks:**", energyDrinks.toString(), false);
+//        }
+//
+//        if (snacks.length() > 0) {
+//            embed.addField("**Snacks:**", snacks.toString(), false);
+//        }
+//
+//        embed.setFooter("Happy shopping! 🛒");
+//        event.replyEmbeds(embed.build()).queue();
+//    }
 
     @JDASlashCommand(name = "shop", subcommand = "add-to-cart", description = "Add an item to the cart")
-    public void onAddItem(GuildSlashEvent event, @SlashOption(name = "product", description = "Product", autocomplete = ProductAutoComplete.PRODUCT_AUTOCOMPLETE_NAME) String itemName, @SlashOption (name = "quantity") int quantity) {
+    public void onAddItem(GuildSlashEvent event, @SlashOption(name = "product", description = "Product", autocomplete = ProductAutoComplete.PRODUCT_AUTOCOMPLETE_NAME) String itemName, @SlashOption(name = "quantity") int quantity) {
         boolean success = shop.addItem(itemName, quantity);
         EmbedBuilder embed = new EmbedBuilder();
         embed.setTitle("\uD83D\uDED2 **Add Item to Cart** \uD83D\uDED2");
@@ -168,7 +181,7 @@ public class ShopCommand extends ApplicationCommand {
         }
     }
 
-    @JDASlashCommand(name = "shop", subcommand = "cancel-order", description = "Cancel the checkout")
+    @JDASlashCommand(name = "shop", subcommand = "cancel-purchase", description = "Cancel the checkout")
     public void onCancelCheckout(GuildSlashEvent event) {
         shop.cancelCheckout();
         EmbedBuilder embed = new EmbedBuilder();
@@ -188,5 +201,63 @@ public class ShopCommand extends ApplicationCommand {
         embed.setColor(Color.GREEN);
         embed.setFooter("All set! Use /shop help for more commands.");
         event.replyEmbeds(embed.build()).queue();
+    }
+
+    @JDASlashCommand(name = "shop", subcommand = "list-items", description = "View shop inventory")
+    public void onShopInventory(GuildSlashEvent event) {
+        EmbedBuilder embed = getShopItemsEmbed("SHOW_ALL");
+        event.replyEmbeds(embed.build())
+                .addActionRow(
+                        buttons.primary("All Products", Emoji.fromUnicode("U+1F6D2")).persistent().bindTo(SHOW_ALL).build(),
+                        buttons.primary("Drinks", Emoji.fromUnicode("U+1F964")).persistent().bindTo(SHOW_DRINKS).build(),
+                        buttons.primary("Snacks", Emoji.fromUnicode("U+1F36A")).persistent().bindTo(SHOW_SNACKS).build()
+                ).queue();
+    }
+
+    @JDAButtonListener(SHOW_ALL)
+    public void showAll(ButtonEvent event) {
+        EmbedBuilder embed = getShopItemsEmbed("SHOW_ALL");
+        event.editMessageEmbeds(embed.build()).queue();
+    }
+
+    @JDAButtonListener(SHOW_DRINKS)
+    public void showDrinks(ButtonEvent event) {
+        EmbedBuilder embed = getShopItemsEmbed("SHOW_DRINKS");
+        event.editMessageEmbeds(embed.build()).queue();
+    }
+
+    @JDAButtonListener(SHOW_SNACKS)
+    public void showSnacks(ButtonEvent event) {
+        EmbedBuilder embed = getShopItemsEmbed("SHOW_SNACKS");
+        event.editMessageEmbeds(embed.build()).queue();
+    }
+
+    private EmbedBuilder getShopItemsEmbed(String category) {
+        EmbedBuilder embed = new EmbedBuilder();
+        embed.setTitle("\uD83D\uDED2 **Shop Inventory** \uD83D\uDED2");
+        embed.setColor(Color.CYAN);
+
+        List<Item> items = shop.getShopInventory();
+        if (category.equals("SHOW_DRINKS")) {
+            items = items.stream().filter(item -> item.getCategory() == ItemCategory.DRINKS).toList();
+            embed.setTitle("**Drinks**");
+        } else if (category.equals("SHOW_SNACKS")) {
+            items = items.stream().filter(item -> item.getCategory() == ItemCategory.SNACKS).toList();
+            embed.setTitle("**Snacks**");
+        }
+
+        if (items.isEmpty()) {
+            embed.setDescription("No items available in this category.");
+        } else {
+            StringBuilder description = new StringBuilder();
+            for (Item item : items) {
+                description.append("**").append(item.getName()).append("**\n")
+                        .append("Price: $").append(item.getPrice()).append("\n")
+                        .append("Stock: ").append(item.getQuantity()).append("\n\n");
+            }
+            embed.setDescription(description.toString());
+        }
+
+        return embed;
     }
 }

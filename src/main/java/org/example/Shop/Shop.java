@@ -68,6 +68,7 @@ public class Shop {
             }
 
             cart.clearCart();
+            saveAsJSON();
             return total;
         }
     }
@@ -87,22 +88,13 @@ public class Shop {
     }
 
     public void summarizeCart(Cart cart) {
-        Map<String, Item> itemSummary = new HashMap<>();
-
-        // Combine quantities and ensure prices are considered
+        Map<String, Integer> itemQuantities = new HashMap<>();
         for (Item item : cart.getItems()) {
-            if (itemSummary.containsKey(item.getName())) {
-                Item existingItem = itemSummary.get(item.getName());
-                existingItem.setQuantity(existingItem.getQuantity() + item.getQuantity());
-            } else {
-                itemSummary.put(item.getName(), new Item(item.getName(), item.getPrice(), item.getQuantity(), item.getCategory()));
-            }
+            itemQuantities.put(item.getName(), itemQuantities.getOrDefault(item.getName(), 0) + 1);
         }
-
-        // Clear the current cart and add the summarized items
-        cart.clearCart();
-        for (Item summarizedItem : itemSummary.values()) {
-            cart.addItem(summarizedItem, summarizedItem.getQuantity());
+        System.out.println("Items in the cart:");
+        for (Map.Entry<String, Integer> entry : itemQuantities.entrySet()) {
+            System.out.println(entry.getKey() + " - Quantity: " + entry.getValue());
         }
     }
 
