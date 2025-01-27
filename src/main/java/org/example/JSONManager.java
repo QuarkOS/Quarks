@@ -1,31 +1,29 @@
 package org.example;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.example.Shop.Item;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.List;
+import java.util.ArrayList;
 
 public class JSONManager {
+    public static final File BUNDLE_SAVE = new File("bundles.json");
     public static ObjectMapper objectMapper = new ObjectMapper();
 
-
-    public JSONManager() {
-    }
-
-    public static void saveShopData(List<Item> shopInventory) {
+    public static void saveBundleJson(BundleDTO bundleDTO) {
         try {
-            objectMapper.writerWithDefaultPrettyPrinter().writeValue(new File("jsonoutput.json"), shopInventory);
+            objectMapper.writerWithDefaultPrettyPrinter().writeValue(BUNDLE_SAVE, bundleDTO);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
     }
-    public static List<Item> loadShopData(String jsonFilePath) {
+
+    public static BundleDTO loadBundleJson() {
         try {
-            return objectMapper.readValue(new File(jsonFilePath), new TypeReference<List<Item>>() {});
+            if (!BUNDLE_SAVE.exists()) {
+                return new BundleDTO(new ArrayList<>());
+            }
+            return objectMapper.readValue(BUNDLE_SAVE, BundleDTO.class);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }

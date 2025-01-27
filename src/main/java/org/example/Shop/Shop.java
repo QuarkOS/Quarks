@@ -2,42 +2,45 @@ package org.example.Shop;
 
 import io.github.freya022.botcommands.api.core.service.annotations.BService;
 import net.dv8tion.jda.api.EmbedBuilder;
-import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.entities.channel.concrete.TextChannel;
+import org.example.BundleDTO;
 import org.example.JSONManager;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
+import java.util.logging.Logger;
 
 @BService
 public class Shop {
 
-    private List<Item> shopInventory;
+    private static final Logger LOGGER = Logger.getLogger(Shop.class.getName());
+    private ItemService itemService;
+    private List<Bundle> bundles;
     private Cart cart;
 
-    public Shop() {
-        if (Files.exists(Path.of("jsonoutput.json"))) {
-            this.shopInventory = JSONManager.loadShopData("jsonoutput.json");
-        } else {
-            this.shopInventory = List.of(
-                    new Item("Red Bull - Orange Edition", 1.50, 10, ItemCategory.DRINKS),
-                    new Item("Red Bull - Original", 1.50, 10, ItemCategory.DRINKS),
-                    new Item("Red Bull - Yellow Edition", 1.50, 10, ItemCategory.DRINKS),
-                    new Item("Red Bull - Blue Edition", 1.50, 10, ItemCategory.DRINKS),
-                    new Item("Red Bull - Green Edition", 1.50, 10, ItemCategory.DRINKS),
-                    new Item("Red Bull - White Edition", 1.50, 10, ItemCategory.DRINKS),
-                    new Item("Jumpy's Paprika", 2.00, 10, ItemCategory.SNACKS),
-                    new Item("Pringle's Original", 2.50, 10, ItemCategory.SNACKS),
-                    new Item("Pringle's Sour Cream & Onion", 2.50, 10, ItemCategory.SNACKS),
-                    new Item("Pringle's Paprika", 2.50, 10, ItemCategory.SNACKS),
-                    new Item("Skittles", 1.00, 10, ItemCategory.SNACKS),
-                    new Item("NicNac's", 2.00, 10, ItemCategory.SNACKS)
-            );
-        }
+    public Shop(ItemService itemService) {
+        this.itemService = itemService;
+        BundleDTO data = JSONManager.loadBundleJson();
+        this.bundles = new ArrayList<>(data.bundles());
         this.cart = new Cart();
+    }
+
+    public Optional<Bundle> findBundleByName(String name) {
+        return bundles.stream().filter(bundle -> bundle.getName().equalsIgnoreCase(name)).findFirst();
+    }
+
+    public void addBundle(Bundle bundle) {
+        bundles.add(bundle);
+        LOGGER.info("Bundle " + bundle.getName() + " has been added to the shop.");
+    }
+
+    public List<Bundle> getBundles() {
+        return bundles;
+    }
+
+    public Optional<Item> findItemByName(String name) {
+        return itemService.getItemByName(name);
     }
 
     public double confirmCheckout(TextChannel channel) {
@@ -48,9 +51,7 @@ public class Shop {
         if (checkIfAnyItemInCartIsNotAvailableInShopInventory(cart)) {
             System.out.println("One or more items in the cart are not available in the shop inventory. Cannot confirm checkout.");
             return -1.0;
-        }
-
-        else {
+        } else {
             double total = cart.calculateTotal();
             EmbedBuilder embed = cart.getCartList(cart);
             embed.setTitle("Checkout Confirmation");
@@ -60,7 +61,7 @@ public class Shop {
             System.out.println("Checkout confirmed. Total amount: $" + total);
 
             for (Item item : cart.getItems()) {
-                for (Item shopItem : shopInventory) {
+                for (Item shopItem : itemService.getItems()) {
                     if (item.getName().equals(shopItem.getName())) {
                         shopItem.setQuantity(shopItem.getQuantity() - 1);
                     }
@@ -76,7 +77,7 @@ public class Shop {
     private boolean checkIfAnyItemInCartIsNotAvailableInShopInventory(Cart cart) {
         summarizeCart(cart);
         for (Item item : cart.getItems()) {
-            for (Item shopItem : shopInventory) {
+            for (Item shopItem : itemService.getItems()) {
                 if (item.getName().equals(shopItem.getName())) {
                     if (shopItem.getQuantity() == 0 || item.getQuantity() > shopItem.getQuantity()) {
                         return true;
@@ -122,8 +123,8 @@ public class Shop {
         }
     }
 
-    private Item getItemByString(String input) {
-        for (Item item : shopInventory) {
+    public Item getItemByString(String input) {
+        for (Item item : itemService.getItems()) {
             if (item.getName().equalsIgnoreCase(input)) {
                 return item;
             }
@@ -142,13 +143,13 @@ public class Shop {
 
     public void viewItems() {
         System.out.println("Available items in the shop:");
-        for (Item item : shopInventory) {
+        for (Item item : itemService.getItems()) {
             System.out.println(item);
         }
     }
 
     public List<Item> getShopInventory() {
-        return shopInventory;
+        return itemService.getItems();
     }
 
     public Cart getCart() {
@@ -157,6 +158,8 @@ public class Shop {
 
     public void saveAsJSON() {
         // Save shop data as JSON
-        JSONManager.saveShopData(this.shopInventory);
+        //TODO change this to make a separate save file for items
+        BundleDTO data = new BundleDTO(bundles);
+        JSONManager.saveBundleJson(data);
     }
 }

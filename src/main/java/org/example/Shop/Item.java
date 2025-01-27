@@ -1,12 +1,16 @@
 package org.example.Shop;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 public class Item {
+    private int id;
     private String name;
     private double price;
     private int quantity;
     private ItemCategory category;
 
-    public Item(String name, double price, int quantity, ItemCategory category) {
+    public Item(@JsonProperty("id") int id, @JsonProperty("name") String name,@JsonProperty("price") double price, @JsonProperty("quantity") int quantity, @JsonProperty("category") ItemCategory category) {
+        this.id = id;
         this.name = name;
         this.price = price;
         this.quantity = quantity;
@@ -47,12 +51,11 @@ public class Item {
         this.category = category;
     }
 
-    @Override
-    public String toString() {
-        return "Item{" +
-                "name='" + name + '\'' +
-                ", price=" + price +
-                ", quantity=" + quantity +
-                '}';
+    public int getId() {
+        return id;
+    }
+
+    public void setId(int id) {
+        this.id = id;
     }
 }
