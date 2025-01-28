@@ -43,7 +43,7 @@ public class Shop {
         return itemService.getItemByName(name);
     }
 
-    public double confirmCheckout(TextChannel channel) {
+    public double confirmCheckout(TextChannel channel, String location, String paymentMethod, String name) {
         if (cart.isEmpty()) {
             System.out.println("The cart is empty. Cannot confirm checkout.");
             return -2.0;
@@ -55,6 +55,9 @@ public class Shop {
             double total = cart.calculateTotal();
             EmbedBuilder embed = cart.getCartList(cart);
             embed.setTitle("Checkout Confirmation");
+            embed.addField("Location", location, false);
+            embed.addField("Payment Method", paymentMethod, false);
+            embed.addField("Name", name, false);
             embed.setDescription("Total amount: $" + total);
             embed.setFooter("Thank you for shopping with us!", null);
             channel.sendMessageEmbeds(embed.build()).queue();

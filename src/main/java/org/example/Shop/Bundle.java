@@ -11,6 +11,8 @@ public class Bundle {
     private final String name;
     @JsonProperty("items")
     private final Map<Integer, Integer> items;
+    @JsonProperty("price")
+    private double price;
 
     public Bundle(String name) {
         this.name = name;
@@ -39,5 +41,13 @@ public class Bundle {
 
     public void removeItem(Item item) {
         items.remove(item.getId());
+    }
+
+    public double getPrice() {
+        return price;
+    }
+
+    public void setPrice(double price) {
+        this.price = price;
     }
 }

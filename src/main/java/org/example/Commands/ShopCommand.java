@@ -13,6 +13,7 @@ import io.github.freya022.botcommands.api.components.annotations.JDAButtonListen
 import io.github.freya022.botcommands.api.components.event.ButtonEvent;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.entities.emoji.Emoji;
+import org.example.Commands.AutoCompleters.PaymentAutoComplete;
 import org.example.Commands.AutoCompleters.ProductAutoComplete;
 import org.example.Shop.Item;
 import org.example.Shop.ItemCategory;
@@ -154,8 +155,8 @@ public class ShopCommand extends ApplicationCommand {
     }
 
     @JDASlashCommand(name = "shop", subcommand = "confirm-purchase", description = "Confirm the checkout")
-    public void onCheckout(GuildSlashEvent event) {
-        double total = shop.confirmCheckout(event.getGuild().getTextChannelById("1298223556655714374"));
+    public void onCheckout(GuildSlashEvent event, @SlashOption(name = "location", description = "Location") String location, @SlashOption(name = "payment-method", description = "Payment Method", autocomplete = PaymentAutoComplete.PAYMENT_AUTOCOMPLETE_NAME) String paymentMethod, @SlashOption(name = "name", description = "Name") String name) {
+        double total = shop.confirmCheckout(event.getGuild().getTextChannelById("1298223556655714374"), location, paymentMethod, name);
 
         if (total == -1.0) { // One or More Items not available
             EmbedBuilder embedUnavailable = new EmbedBuilder();

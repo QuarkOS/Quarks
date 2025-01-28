@@ -86,6 +86,17 @@ public class BundleCommand extends ApplicationCommand {
         } else {
             event.reply("Bundle **" + bundleName + "** not found.").queue();
         }
+        shop.findBundleByName(bundleName).ifPresent(bundle1 -> bundle1.setPrice(calculatePrice(bundle1)));
+    }
+
+    private double calculatePrice(Bundle bundle) {
+        double price = 0;
+        for (Map.Entry<Integer, Integer> entry : bundle.getItems().entrySet()) {
+            int itemId = entry.getKey();
+            Item item = itemService.getItemById(itemId).orElseThrow();
+            price += item.getPrice() * entry.getValue();
+        }
+        return price;
     }
 
     @JDASlashCommand(name = "bundle", subcommand = "remove-item", description = "Remove an item from a bundle")
@@ -146,8 +157,12 @@ public class BundleCommand extends ApplicationCommand {
                         .append(item.getName())
                         .append("** - Quantity: ")
                         .append(entry.getValue())
+                        .append("\n")
                         .append("\n");
             }
+            description.append("\n");
+            description.append("Total price: $").append(todayBundle.getPrice() - (todayBundle.getPrice() * 0.1));
+            description.append("\n**Total savings**: $").append(todayBundle.getPrice() * 0.1);
             embed.setDescription(description.toString());
         }
 
@@ -202,5 +217,30 @@ public class BundleCommand extends ApplicationCommand {
     public void listBundles(GuildSlashEvent event) {
         EmbedBuilder embed = getBundlesEmbed();
         event.replyEmbeds(embed.build()).queue();
+    }
+
+    @JDASlashCommand(name = "bundle", subcommand = "buy", description = "Buy a bundle")
+    public void buyBundle(GuildSlashEvent event, @SlashOption(name = "bundle", description = "Bundle", autocomplete = BundleAutoComplete.BUNDLE_AUTOCOMPLETE_NAME) String bundleName) {
+        Optional<Bundle> bundle = shop.findBundleByName(bundleName);
+        if (bundle.isPresent()) {
+            StringBuilder description = new StringBuilder("Items in the bundle:\n\n");
+            for (Map.Entry<Integer, Integer> entry : bundle.get().getItems().entrySet()) {
+                int itemId = entry.getKey();
+                Item item = itemService.getItemById(itemId).orElseThrow();
+                description.append("**")
+                        .append(item.getName())
+                        .append("** - Quantity: ")
+                        .append(entry.getValue())
+                        .append("\n");
+            }
+            EmbedBuilder embed = new EmbedBuilder();
+            embed.setTitle("\uD83D\uDED2 **Buy Bundle** \uD83D\uDED2");
+            embed.setDescription(description.toString());
+            embed.setColor(Color.GREEN);
+            event.replyEmbeds(embed.build()).queue();
+        } else {
+            event.reply("Bundle **" + bundleName + "** not found.").queue();
+        }
+
     }
 }
