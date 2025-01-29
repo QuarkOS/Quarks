@@ -64,44 +64,6 @@ public class ShopCommand extends ApplicationCommand {
         event.replyEmbeds(embed.build()).queue();
     }
 
-//    @JDASlashCommand(name = "shop", subcommand = "list-items", description = "View available items in the shop")
-//    public void onViewItems(GuildSlashEvent event) {
-//        EmbedBuilder embed = new EmbedBuilder();
-//        embed.setTitle("\uD83D\uDCC8 **Shop Items** \uD83D\uDCC8");
-//        embed.setDescription("Explore the array of items available in our shop:");
-//        embed.setColor(Color.BLUE);
-//
-//        // Categorize items
-//        StringBuilder energyDrinks = new StringBuilder();
-//        StringBuilder snacks = new StringBuilder();
-//
-//        for (Item item : shop.getShopInventory()) {
-//            switch (item.getCategory()) {
-//                case ItemCategory.DRINKS:
-//                    energyDrinks.append("**").append(item.getName()).append("**\n")
-//                            .append("Price: $").append(item.getPrice()).append("\n")
-//                            .append("Stock: ").append(item.getQuantity()).append("\n\n");
-//                    break;
-//                case ItemCategory.SNACKS:
-//                    snacks.append("**").append(item.getName()).append("**\n")
-//                            .append("Price: $").append(item.getPrice()).append("\n")
-//                            .append("Stock: ").append(item.getQuantity()).append("\n\n");
-//                    break;
-//            }
-//        }
-//
-//        if (energyDrinks.length() > 0) {
-//            embed.addField("**Energy Drinks:**", energyDrinks.toString(), false);
-//        }
-//
-//        if (snacks.length() > 0) {
-//            embed.addField("**Snacks:**", snacks.toString(), false);
-//        }
-//
-//        embed.setFooter("Happy shopping! 🛒");
-//        event.replyEmbeds(embed.build()).queue();
-//    }
-
     @JDASlashCommand(name = "shop", subcommand = "add-to-cart", description = "Add an item to the cart")
     public void onAddItem(GuildSlashEvent event, @SlashOption(name = "product", description = "Product", autocomplete = ProductAutoComplete.PRODUCT_AUTOCOMPLETE_NAME) String itemName, @SlashOption(name = "quantity") int quantity) {
         boolean success = shop.addItem(itemName, quantity);

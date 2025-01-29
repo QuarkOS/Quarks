@@ -12,6 +12,7 @@ import io.github.freya022.botcommands.api.components.event.ButtonEvent;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.entities.emoji.Emoji;
 import org.example.Commands.AutoCompleters.BundleAutoComplete;
+import org.example.Commands.AutoCompleters.PaymentAutoComplete;
 import org.example.Shop.Bundle;
 import org.example.Shop.Item;
 import org.example.Shop.ItemService;
@@ -220,10 +221,11 @@ public class BundleCommand extends ApplicationCommand {
     }
 
     @JDASlashCommand(name = "bundle", subcommand = "buy", description = "Buy a bundle")
-    public void buyBundle(GuildSlashEvent event, @SlashOption(name = "bundle", description = "Bundle", autocomplete = BundleAutoComplete.BUNDLE_AUTOCOMPLETE_NAME) String bundleName) {
+    public void buyBundle(GuildSlashEvent event, @SlashOption(name = "bundle", description = "Bundle", autocomplete = BundleAutoComplete.BUNDLE_AUTOCOMPLETE_NAME) String bundleName, @SlashOption(name = "location", description = "Location") String location, @SlashOption(name = "payment-method", description = "Payment Method", autocomplete = PaymentAutoComplete.PAYMENT_AUTOCOMPLETE_NAME) String paymentMethod, @SlashOption(name = "name", description = "Name") String name) {
         Optional<Bundle> bundle = shop.findBundleByName(bundleName);
         if (bundle.isPresent()) {
             StringBuilder description = new StringBuilder("Items in the bundle:\n\n");
+            int totalItems = 0;
             for (Map.Entry<Integer, Integer> entry : bundle.get().getItems().entrySet()) {
                 int itemId = entry.getKey();
                 Item item = itemService.getItemById(itemId).orElseThrow();
@@ -232,15 +234,20 @@ public class BundleCommand extends ApplicationCommand {
                         .append("** - Quantity: ")
                         .append(entry.getValue())
                         .append("\n");
+                totalItems += entry.getValue();
             }
             EmbedBuilder embed = new EmbedBuilder();
-            embed.setTitle("\uD83D\uDED2 **Buy Bundle** \uD83D\uDED2");
+            embed.setTitle("\uD83D\uDED2 **Bundle Purchased!** \uD83D\uDED2");
             embed.setDescription(description.toString());
+            embed.addField("Total Items", String.valueOf(totalItems), true);
+            embed.addField("Price", bundle.get().getPrice() + " €", true);
+            embed.setFooter("Thank you for your purchase!", null);
             embed.setColor(Color.GREEN);
             event.replyEmbeds(embed.build()).queue();
+            shop.confirmCheckout(event.getGuild().getTextChannelById("1298223556655714374"), location, paymentMethod, name);
         } else {
             event.reply("Bundle **" + bundleName + "** not found.").queue();
         }
-
     }
+
 }
