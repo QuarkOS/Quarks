@@ -10,7 +10,7 @@ public class Config {
     private static Config INSTANCE;
 
     private String token = Dotenv.configure().load().get("DISCORD_TOKEN");
-    private List<Long> ownerIds;
+    private List<Long> ownerIds = List.of(Long.parseLong(Dotenv.configure().load().get("OWNER_ID")));
 
     public String getToken() { return token; }
     public List<Long> getOwnerIds() { return ownerIds; }
