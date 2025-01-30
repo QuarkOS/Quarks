@@ -11,6 +11,7 @@ import io.github.freya022.botcommands.api.components.annotations.JDAButtonListen
 import io.github.freya022.botcommands.api.components.event.ButtonEvent;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.entities.emoji.Emoji;
+import org.example.BotCommands.Config;
 import org.example.Commands.AutoCompleters.BundleAutoComplete;
 import org.example.Commands.AutoCompleters.PaymentAutoComplete;
 import org.example.Shop.Bundle;
@@ -60,33 +61,59 @@ public class BundleCommand extends ApplicationCommand {
 
     @JDASlashCommand(name = "bundle", subcommand = "create", description = "Create a new bundle")
     public void createBundle(GuildSlashEvent event, @SlashOption(name = "name") String bundleName) {
-        Bundle bundle = new Bundle(bundleName);
-        shop.addBundle(bundle);
-        EmbedBuilder embed = new EmbedBuilder();
-        embed.setTitle("\uD83D\uDCC8 **Create Bundle** \uD83D\uDCC8");
-        embed.setDescription("A new bundle named **" + bundleName + "** has been created.");
-        embed.setColor(Color.GREEN);
-        event.replyEmbeds(embed.build()).queue();
+        if (!isAllowedToUseCommand(event)) {
+            event.reply("You are not allowed to use this command.").queue();
+            return;
+        }
+
+        if (!isBundleDuplicate(bundleName)) {
+            Bundle bundle = new Bundle(bundleName);
+            shop.addBundle(bundle);
+            EmbedBuilder embed = new EmbedBuilder();
+            embed.setTitle("\uD83D\uDCC8 **Create Bundle** \uD83D\uDCC8");
+            embed.setDescription("A new bundle named **" + bundleName + "** has been created.");
+            embed.setColor(Color.GREEN);
+            event.replyEmbeds(embed.build()).queue();
+        } else {
+            event.reply("Bundle **" + bundleName + "** already exists.").queue();
+        }
+
+    }
+
+    private boolean isBundleDuplicate(String bundleName) {
+        return shop.getBundles().stream().anyMatch(bundle -> bundle.getName().equalsIgnoreCase(bundleName));
     }
 
     @JDASlashCommand(name = "bundle", subcommand = "add-item", description = "Add an item to a bundle")
     public synchronized void addBundleItem(GuildSlashEvent event, @SlashOption(name = "bundle", autocomplete = BundleAutoComplete.BUNDLE_AUTOCOMPLETE_NAME) String bundleName, @SlashOption(name = "item", autocomplete = BundleAutoComplete.ITEM_AUTOCOMPLETE_NAME) String itemName, @SlashOption(name = "quantity") int quantity) {
-        Optional<Bundle> bundle = shop.findBundleByName(bundleName);
-        if (bundle.isPresent()) {
-            Optional<Item> item = shop.findItemByName(itemName);
-            if (item.isPresent()) {
-                bundle.get().addItem(item.get(), quantity);
-                EmbedBuilder embed = new EmbedBuilder();
-                embed.setTitle("\uD83D\uDED2 **Add Item to Bundle** \uD83D\uDED2");
-                embed.setDescription("Item **" + itemName + "** has been added to the bundle **" + bundleName + "**.");
-                embed.setColor(Color.GREEN);
-                event.replyEmbeds(embed.build()).queue();
-            } else {
-                event.reply("Item **" + itemName + "** not found.").queue();
-            }
-        } else {
-            event.reply("Bundle **" + bundleName + "** not found.").queue();
+        if (!isAllowedToUseCommand(event)) {
+            event.reply("You are not allowed to use this command.").queue();
+            return;
         }
+
+        Optional<Bundle> bundle = shop.findBundleByName(bundleName);
+        if (bundle.isEmpty()) {
+            event.reply("Bundle **" + bundleName + "** not found.").queue();
+            return;
+        }
+
+        Optional<Item> item = shop.findItemByName(itemName);
+        if (item.isEmpty()) {
+            event.reply("Item **" + itemName + "** not found.").queue();
+            return;
+        }
+
+        if (quantity <= 0) {
+            event.reply("Quantity must be greater than 0.").queue();
+            return;
+        }
+
+        bundle.get().addItem(item.get(), quantity);
+        EmbedBuilder embed = new EmbedBuilder();
+        embed.setTitle("\uD83D\uDED2 **Add Item to Bundle** \uD83D\uDED2");
+        embed.setDescription("Item **" + itemName + "** has been added to the bundle **" + bundleName + "**.");
+        embed.setColor(Color.GREEN);
+        event.replyEmbeds(embed.build()).queue();
         shop.findBundleByName(bundleName).ifPresent(bundle1 -> bundle1.setPrice(calculatePrice(bundle1)));
     }
 
@@ -102,6 +129,11 @@ public class BundleCommand extends ApplicationCommand {
 
     @JDASlashCommand(name = "bundle", subcommand = "remove-item", description = "Remove an item from a bundle")
     public synchronized void removeBundleItem(GuildSlashEvent event, @SlashOption(name = "bundle", autocomplete = BundleAutoComplete.BUNDLE_AUTOCOMPLETE_NAME) String bundleName, @SlashOption(name = "item", autocomplete = BundleAutoComplete.ITEM_AUTOCOMPLETE_NAME) String itemName) {
+        if (!isAllowedToUseCommand(event)) {
+            event.reply("You are not allowed to use this command.").queue();
+            return;
+        }
+
         Optional<Bundle> bundle = shop.findBundleByName(bundleName);
         if (bundle.isPresent()) {
             Optional<Item> item = shop.findItemByName(itemName);
@@ -201,6 +233,11 @@ public class BundleCommand extends ApplicationCommand {
 
     @JDASlashCommand(name = "bundle", subcommand = "set-today", description = "Set today's bundle")
     public void setTodayBundle(GuildSlashEvent event, @SlashOption(name = "bundle", autocomplete = BundleAutoComplete.BUNDLE_AUTOCOMPLETE_NAME) String bundleName) {
+        if (!isAllowedToUseCommand(event)) {
+            event.reply("You are not allowed to use this command.").queue();
+            return;
+        }
+
         Optional<Bundle> bundle = shop.findBundleByName(bundleName);
         if (bundle.isPresent()) {
             todayBundle = bundle.get();
@@ -250,4 +287,7 @@ public class BundleCommand extends ApplicationCommand {
         }
     }
 
+    private boolean isAllowedToUseCommand(GuildSlashEvent event) {
+        return Config.getInstance().getOwnerIds().contains(event.getUser().getIdLong());
+    }
 }
