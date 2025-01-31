@@ -1,5 +1,8 @@
 # QuarkOS Shop Bot
 
+## Test Link
+https://discord.gg/5wp5t7wH
+
 QuarkOS Shop Bot is a Discord bot that allows users to interact with a virtual shop. Users can view available items, add items to their cart, view their cart, and proceed to checkout.
 
 ## Features
