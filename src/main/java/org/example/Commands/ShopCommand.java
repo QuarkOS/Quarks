@@ -6,9 +6,7 @@ import io.github.freya022.botcommands.api.commands.application.slash.GuildSlashE
 import io.github.freya022.botcommands.api.commands.application.slash.annotations.JDASlashCommand;
 import io.github.freya022.botcommands.api.commands.application.slash.annotations.SlashOption;
 import io.github.freya022.botcommands.api.commands.application.slash.annotations.TopLevelSlashCommandData;
-import io.github.freya022.botcommands.api.components.Button;
 import io.github.freya022.botcommands.api.components.Buttons;
-import io.github.freya022.botcommands.api.components.annotations.ComponentData;
 import io.github.freya022.botcommands.api.components.annotations.JDAButtonListener;
 import io.github.freya022.botcommands.api.components.event.ButtonEvent;
 import net.dv8tion.jda.api.EmbedBuilder;
@@ -17,9 +15,10 @@ import org.example.Commands.AutoCompleters.PaymentAutoComplete;
 import org.example.Commands.AutoCompleters.ProductAutoComplete;
 import org.example.Shop.Item;
 import org.example.Shop.ItemCategory;
+import org.example.Shop.PaymentMethod;
 import org.example.Shop.Shop;
 
-import java.awt.Color;
+import java.awt.*;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -117,8 +116,26 @@ public class ShopCommand extends ApplicationCommand {
     }
 
     @JDASlashCommand(name = "shop", subcommand = "confirm-purchase", description = "Confirm the checkout")
-    public void onCheckout(GuildSlashEvent event, @SlashOption(name = "location", description = "Location") String location, @SlashOption(name = "payment-method", description = "Payment Method", autocomplete = PaymentAutoComplete.PAYMENT_AUTOCOMPLETE_NAME) String paymentMethod, @SlashOption(name = "name", description = "Name") String name) {
-        double total = shop.confirmCheckout(event.getGuild().getTextChannelById("1298223556655714374"), location, paymentMethod, name);
+    public void onCheckout(
+            GuildSlashEvent event,
+            @SlashOption(name = "location", description = "Location") String location,
+            @SlashOption(
+                    name = "payment-method",
+                    description = "Payment Method",
+                    autocomplete = PaymentAutoComplete.PAYMENT_AUTOCOMPLETE_NAME // Link to autocompleter
+            ) String rawPaymentMethod,
+            @SlashOption(name = "name", description = "Name") String name
+    ) {
+        try {
+            // Convert the autocompleter's value (e.g., "BAR") to the enum
+            PaymentMethod paymentMethod = PaymentMethod.valueOf(rawPaymentMethod);
+
+            double total = shop.confirmCheckout(
+                    event.getGuild().getTextChannelById("1298223556655714374"),
+                    location,
+                    paymentMethod.getDisplayName(), // "Bar" or "Card"
+                    name
+            );
 
         if (total == -1.0) { // One or More Items not available
             EmbedBuilder embedUnavailable = new EmbedBuilder();
@@ -142,7 +159,17 @@ public class ShopCommand extends ApplicationCommand {
             embed.setFooter("We hope to see you again!");
             event.replyEmbeds(embed.build()).queue();
         }
+        } catch (IllegalArgumentException e) {
+            // Handle invalid payment method
+            EmbedBuilder embed = new EmbedBuilder()
+                    .setTitle("❌ Invalid Payment Method ❌")
+                    .setDescription("Allowed methods: **Bar** or **Card**")
+                    .setColor(Color.RED);
+            event.replyEmbeds(embed.build()).setEphemeral(true).queue();
+        }
     }
+
+
 
     @JDASlashCommand(name = "shop", subcommand = "cancel-purchase", description = "Cancel the checkout")
     public void onCancelCheckout(GuildSlashEvent event) {
